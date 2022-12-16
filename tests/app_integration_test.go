@@ -31,13 +31,13 @@ var (
 func init() {
 	t1, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 	t1 = t1.UTC()
-	test1 = app.Test{Id: t1, Name: "graphite-clickhouse 2006-01-02T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=1 USERS_TAGS=1 USERS_1H_0=1"}
+	test1 = app.Test{Id: uint64(t1.UnixNano()), Ts: t1, Name: "graphite-clickhouse 2006-01-02T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=1 USERS_TAGS=1 USERS_1H_0=1"}
 	t2, _ = time.Parse(time.RFC3339, "2006-01-03T15:04:05Z")
 	t2 = t2.UTC()
-	test2 = app.Test{Id: t2, Name: "graphite-clickhouse 2006-01-03T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=2 USERS_TAGS=2 USERS_1H_0=2"}
+	test2 = app.Test{Id: uint64(t2.UnixNano()), Ts: t2, Name: "graphite-clickhouse 2006-01-03T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=2 USERS_TAGS=2 USERS_1H_0=2"}
 	t3, _ = time.Parse(time.RFC3339, "2006-01-04T15:04:05Z")
 	t3 = t3.UTC()
-	test3 = app.Test{Id: t3, Name: "graphite-clickhouse 2006-01-04T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=2 USERS_TAGS=2 USERS_1H_0=2"}
+	test3 = app.Test{Id: uint64(t3.UnixNano()), Ts: t3, Name: "graphite-clickhouse 2006-01-04T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=2 USERS_TAGS=2 USERS_1H_0=2"}
 
 	dbInit()
 }
@@ -58,7 +58,8 @@ func dbInit() {
 		`DROP TABLE IF EXISTS t_k6_samples`,
 		`DROP TABLE IF EXISTS t_k6_tests`,
 		`CREATE TABLE t_k6_samples (
-			id DateTime64(9, 'UTC'),
+			id UInt64,
+			start DateTime64(9, 'UTC'),
 			ts DateTime64(9, 'UTC'),
 			metric String,
 			name String,
@@ -66,15 +67,16 @@ func dbInit() {
 			value Float64,
 			version DateTime64(9, 'UTC')
 		) ENGINE = ReplacingMergeTree(version)
-		PARTITION BY toYYYYMM(id)
+		PARTITION BY toYYYYMM(ts)
 		ORDER BY (id, ts, metric, name);`,
 		`CREATE TABLE t_k6_tests (
-			id DateTime64(9, 'UTC'),
+			id UInt64,
+			ts DateTime64(9, 'UTC'),
 			name String,
 			params String
 		) ENGINE = ReplacingMergeTree(id)
-		PARTITION BY toYYYYMM(id)
-		ORDER BY (name, id);`,
+		PARTITION BY toYYYYMM(ts)
+		ORDER BY (id, ts, name);`,
 	}
 	for _, s := range schema {
 		_, err = db.Exec(s)
@@ -87,13 +89,13 @@ func dbInit() {
 	if err != nil {
 		panic(err)
 	}
-	batch, err := scope.Prepare(`INSERT INTO t_k6_tests (id, name, params)`)
+	batch, err := scope.Prepare(`INSERT INTO t_k6_tests (id, ts, name, params)`)
 	if err != nil {
 		panic(err)
 	}
 	tests := []app.Test{test1, test2, test3}
 	for _, test := range tests {
-		if _, err = batch.Exec(test.Id, test.Name, test.Params); err != nil {
+		if _, err = batch.Exec(test.Id, test.Ts, test.Name, test.Params); err != nil {
 			scope.Rollback()
 			panic(err)
 		}

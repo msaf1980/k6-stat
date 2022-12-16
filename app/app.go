@@ -24,7 +24,8 @@ func Getenv(key, defaultValue string) (v string) {
 }
 
 type Test struct {
-	Id     time.Time
+	Id     uint64
+	Ts     time.Time
 	Name   string
 	Params string
 }
@@ -72,7 +73,7 @@ func newApp(db *sql.DB, logger *zerolog.Logger, tableTests, tableSamples string)
 		tests := make([]Test, 0, 50)
 
 		query.Grow(64)
-		_, _ = query.WriteString("SELECT id, name, params FROM ")
+		_, _ = query.WriteString("SELECT id, ts, name, params FROM ")
 		_, _ = query.WriteString(tableTests)
 
 		if err := c.BodyParser(&filters); err != nil {
@@ -83,10 +84,10 @@ func newApp(db *sql.DB, logger *zerolog.Logger, tableTests, tableSamples string)
 
 		if filters.From > 0 {
 			if filtered {
-				_, _ = query.WriteString(" AND id >= ?")
+				_, _ = query.WriteString(" AND ts >= ?")
 			} else {
 				filtered = true
-				_, _ = query.WriteString(" WHERE id >= ?")
+				_, _ = query.WriteString(" WHERE ts >= ?")
 			}
 			filter = append(filter, time.Unix(filters.From, 0).UTC())
 		} else if filters.From < 0 {
@@ -94,10 +95,10 @@ func newApp(db *sql.DB, logger *zerolog.Logger, tableTests, tableSamples string)
 		}
 		if filters.Until > 0 {
 			if filtered {
-				_, _ = query.WriteString(" AND id < ?")
+				_, _ = query.WriteString(" AND ts < ?")
 			} else {
 				filtered = true
-				_, _ = query.WriteString(" WHERE id < ?")
+				_, _ = query.WriteString(" WHERE ts < ?")
 			}
 			filter = append(filter, time.Unix(filters.Until, 0).UTC())
 		} else if filters.Until < 0 {
@@ -112,7 +113,7 @@ func newApp(db *sql.DB, logger *zerolog.Logger, tableTests, tableSamples string)
 			filter = append(filter, filters.NamePrefix+"%")
 		}
 
-		_, _ = query.WriteString(" ORDER BY id, name")
+		_, _ = query.WriteString(" ORDER BY id, ts, name")
 		rows, err := db.Query(query.String(), filter...)
 		if err != nil {
 			logger.Error().Uint64("id", c.Context().ID()).Str("sql", query.String()).Err(err).Msg("get tests")
@@ -120,14 +121,17 @@ func newApp(db *sql.DB, logger *zerolog.Logger, tableTests, tableSamples string)
 		}
 		defer rows.Close()
 		for rows.Next() {
-			var id time.Time
-			var name, params string
-			err = rows.Scan(&id, &name, &params)
+			var (
+				id           uint64
+				ts           time.Time
+				name, params string
+			)
+			err = rows.Scan(&id, &ts, &name, &params)
 			if err != nil {
 				// handle this error
 				return err
 			}
-			tests = append(tests, Test{Id: id, Name: name, Params: params})
+			tests = append(tests, Test{Id: id, Ts: ts, Name: name, Params: params})
 		}
 		// get any error encountered during iteration
 		err = rows.Err()
@@ -137,6 +141,14 @@ func newApp(db *sql.DB, logger *zerolog.Logger, tableTests, tableSamples string)
 
 		return c.JSON(tests)
 	})
+
+	// app.Get("/api/test/:id", func(c *fiber.Ctx) error {
+	// 	id, _ := strconv.ParseInt(c.Params("id"), 10, 64)
+	// 	if id <= 0 {
+	// 		return c.Status(http.StatusBadRequest).SendString(invalidTestId)
+	// 	}
+	// 	query := "SELECT id, metric, name, tag, quantilesExactExclusive(0.5, 0.95, 0.99)(value)"
+	// })
 
 	return &App{db: db, fiberApp: app, logger: logger, tableTests: tableTests, tableSamples: tableSamples}, nil
 }
