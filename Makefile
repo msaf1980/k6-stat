@@ -48,7 +48,7 @@ logs:
 	${DOCKER} exec -it clickhouse_k6_stat tail -40 /var/log/clickhouse-server/clickhouse-server.log
 
 integrations:
-	${GO} test -cover -race -count=1 -tags=test_integration ./...
+	${GO} test -count=1 -tags=test_integration ./...
 
 lint:
 	golangci-lint run
