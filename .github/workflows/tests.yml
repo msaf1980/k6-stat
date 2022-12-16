@@ -40,3 +40,6 @@ jobs:
 
       - name: Run integration tests
         run: make test
+
+      - name: Run lint
+        uses: golangci/golangci-lint-action@v3
