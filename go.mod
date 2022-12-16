@@ -7,7 +7,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/goccy/go-json v0.10.0
 	github.com/gofiber/fiber/v2 v2.40.1
-	github.com/msaf1980/fiberlog v0.0.1
+	github.com/msaf1980/fiberlog v2.0.2+incompatible
 	github.com/msaf1980/go-stringutils v0.1.4
 	github.com/rs/zerolog v1.28.0
 	github.com/stretchr/testify v1.8.1
