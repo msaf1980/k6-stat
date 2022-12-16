@@ -72,8 +72,8 @@ func newApp(db *sql.DB, logger *zerolog.Logger, tableTests, tableSamples string)
 		tests := make([]Test, 0, 50)
 
 		query.Grow(64)
-		query.WriteString("SELECT id, name, params FROM ")
-		query.WriteString(tableTests)
+		_, _ = query.WriteString("SELECT id, name, params FROM ")
+		_, _ = query.WriteString(tableTests)
 
 		if err := c.BodyParser(&filters); err != nil {
 			if err != fiber.ErrUnprocessableEntity && len(c.Request().Body()) > 0 {
@@ -83,10 +83,10 @@ func newApp(db *sql.DB, logger *zerolog.Logger, tableTests, tableSamples string)
 
 		if filters.From > 0 {
 			if filtered {
-				query.WriteString(" AND id >= ?")
+				_, _ = query.WriteString(" AND id >= ?")
 			} else {
 				filtered = true
-				query.WriteString(" WHERE id >= ?")
+				_, _ = query.WriteString(" WHERE id >= ?")
 			}
 			filter = append(filter, time.Unix(filters.From, 0).UTC())
 		} else if filters.From < 0 {
@@ -94,10 +94,10 @@ func newApp(db *sql.DB, logger *zerolog.Logger, tableTests, tableSamples string)
 		}
 		if filters.Until > 0 {
 			if filtered {
-				query.WriteString(" AND id < ?")
+				_, _ = query.WriteString(" AND id < ?")
 			} else {
 				filtered = true
-				query.WriteString(" WHERE id < ?")
+				_, _ = query.WriteString(" WHERE id < ?")
 			}
 			filter = append(filter, time.Unix(filters.Until, 0).UTC())
 		} else if filters.Until < 0 {
@@ -105,15 +105,14 @@ func newApp(db *sql.DB, logger *zerolog.Logger, tableTests, tableSamples string)
 		}
 		if filters.NamePrefix != "" {
 			if filtered {
-				query.WriteString(" AND name LIKE ?")
+				_, _ = query.WriteString(" AND name LIKE ?")
 			} else {
-				query.WriteString(" WHERE name LIKE ?")
-				filtered = true
+				_, _ = query.WriteString(" WHERE name LIKE ?")
 			}
 			filter = append(filter, filters.NamePrefix+"%")
 		}
 
-		query.WriteString(" ORDER BY id, name")
+		_, _ = query.WriteString(" ORDER BY id, name")
 		rows, err := db.Query(query.String(), filter...)
 		if err != nil {
 			logger.Error().Uint64("id", c.Context().ID()).Str("sql", query.String()).Err(err).Msg("get tests")
@@ -159,7 +158,8 @@ func (app *App) Listen(address string) error {
 	return app.fiberApp.Listen(address)
 }
 
-func (app *App) Shutdown() {
-	app.fiberApp.Shutdown()
+func (app *App) Shutdown() (err error) {
+	err = app.fiberApp.Shutdown()
 	app.db.Close()
+	return
 }
