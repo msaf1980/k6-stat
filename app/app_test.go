@@ -105,10 +105,10 @@ func TestUnitAppTests(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				wg.Done()
-				app.Listen(address)
+				_ = app.Listen(address)
 			}()
 			wg.Wait()
-			defer app.Shutdown()
+			defer func() { _ = app.Shutdown() }()
 			time.Sleep(time.Millisecond * 10)
 
 			var r io.Reader

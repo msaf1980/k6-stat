@@ -39,7 +39,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer app.Shutdown()
+	defer func() {
+		_ = app.Shutdown()
+	}()
 
 	log.Fatal(app.Listen(listen))
 }
