@@ -158,8 +158,10 @@ func (app *App) Listen(address string) error {
 	return app.fiberApp.Listen(address)
 }
 
-func (app *App) Shutdown() (err error) {
-	err = app.fiberApp.Shutdown()
-	app.db.Close()
-	return
+func (app *App) Shutdown() error {
+	return app.fiberApp.Shutdown()
+}
+
+func (app *App) Close() error {
+	return app.db.Close()
 }
