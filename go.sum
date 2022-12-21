@@ -42,6 +42,8 @@ github.com/msaf1980/fiberlog v0.0.1 h1:0iD1hP9r7U5SRDEfVftbEbFLdwMPzZSPaiwFFQsaq
 github.com/msaf1980/fiberlog v0.0.1/go.mod h1:pu+h7mZjKFdI+fecCmzE4BPlnvK/m+Oz4en+1Yya4yc=
 github.com/msaf1980/go-stringutils v0.1.4 h1:UwsIT0hplHVucqbknk3CoNqKkmIuSHhsbBldXxyld5U=
 github.com/msaf1980/go-stringutils v0.1.4/go.mod h1:AxmV/6JuQUAtZJg5XmYATB5ZwCWgtpruVHY03dswRf8=
+github.com/msaf1980/go-timeutils v0.0.2 h1:SkkwJ20phvsg86shXtFdJ6ax6fWK2lFvxOTBhviqksM=
+github.com/msaf1980/go-timeutils v0.0.2/go.mod h1:r252j2O/ZLuwNMp/rlSYhbQdxg6glZ3MzgvskE/ItGY=
 github.com/paulmach/orb v0.7.1 h1:Zha++Z5OX/l168sqHK3k4z18LDvr+YAO/VjK0ReQ9rU=
 github.com/paulmach/orb v0.7.1/go.mod h1:FWRlTgl88VI1RBx/MkrwWDRhQ96ctqMCh8boXhmqB/A=
 github.com/paulmach/protoscan v0.2.1/go.mod h1:SpcSwydNLrxUGSDvXvO0P7g7AuhJ7lcKfDlhJCDw2gY=
