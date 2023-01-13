@@ -19,9 +19,12 @@ import (
 	"time"
 
 	_ "github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/msaf1980/k6-stat/app"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+
+	app "github.com/msaf1980/k6-stat/app/k6-stat"
+	"github.com/msaf1980/k6-stat/dbs"
+	"github.com/msaf1980/k6-stat/utils/env"
 )
 
 func max(a, b int) int {
@@ -31,7 +34,7 @@ func max(a, b int) int {
 	return b
 }
 
-func diffSamplesQuantiles(expected, actual []app.SampleQuantiles) string {
+func diffSamplesQuantiles(expected, actual []dbs.SampleQuantiles) string {
 	maxLen := max(len(expected), len(actual))
 	var sb strings.Builder
 	sb.Grow(1024)
@@ -48,7 +51,7 @@ func diffSamplesQuantiles(expected, actual []app.SampleQuantiles) string {
 	return sb.String()
 }
 
-func diffSamplesStatus(expected, actual []app.SampleStatus) string {
+func diffSamplesStatus(expected, actual []dbs.SampleStatus) string {
 	maxLen := max(len(expected), len(actual))
 	var sb strings.Builder
 	sb.Grow(1024)
@@ -67,16 +70,16 @@ func diffSamplesStatus(expected, actual []app.SampleStatus) string {
 
 var (
 	t1, t2, t3          time.Time
-	test1, test2, test3 app.Test
+	test1, test2, test3 dbs.Test
 
-	samples1_1_d, samples1_2_d, samples1_3_d, samples1_4_d app.Sample
-	samples1_1_r, samples1_2_r, samples1_3_r, samples1_4_r app.Sample
+	samples1_1_d, samples1_2_d, samples1_3_d, samples1_4_d dbs.Sample
+	samples1_1_r, samples1_2_r, samples1_3_r, samples1_4_r dbs.Sample
 
-	samples2_1_d app.Sample
-	samples2_1_r app.Sample
+	samples2_1_d dbs.Sample
+	samples2_1_r dbs.Sample
 
-	samples3_1_d, samples3_2_d app.Sample
-	samples3_1_r, samples3_2_r app.Sample
+	samples3_1_d, samples3_2_d dbs.Sample
+	samples3_1_r, samples3_2_r dbs.Sample
 
 	dbDSN string
 )
@@ -84,15 +87,15 @@ var (
 func init() {
 	t1, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 	t1 = t1.UTC()
-	test1 = app.Test{Id: uint64(t1.UnixNano()), Ts: t1, Name: "graphite-clickhouse 2006-01-02T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=1 USERS_TAGS=1 USERS_1H_0=1"}
+	test1 = dbs.Test{Id: uint64(t1.UnixNano()), Ts: t1, Name: "graphite-clickhouse 2006-01-02T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=1 USERS_TAGS=1 USERS_1H_0=1"}
 	t2, _ = time.Parse(time.RFC3339, "2006-01-03T15:04:05Z")
 	t2 = t2.UTC().Add(time.Nanosecond)
-	test2 = app.Test{Id: uint64(t2.UnixNano()), Ts: t2, Name: "graphite-clickhouse 2006-01-03T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=2 USERS_TAGS=2 USERS_1H_0=2"}
+	test2 = dbs.Test{Id: uint64(t2.UnixNano()), Ts: t2, Name: "graphite-clickhouse 2006-01-03T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=2 USERS_TAGS=2 USERS_1H_0=2"}
 	t3, _ = time.Parse(time.RFC3339, "2006-01-04T15:04:05Z")
 	t3 = t3.UTC()
-	test3 = app.Test{Id: uint64(t3.UnixNano()), Ts: t3, Name: "graphite-clickhouse 2006-01-04T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=2 USERS_TAGS=2 USERS_1H_0=2"}
+	test3 = dbs.Test{Id: uint64(t3.UnixNano()), Ts: t3, Name: "graphite-clickhouse 2006-01-04T15:04:05Z", Params: "RENDER_FORMAT=carbonapi_v3_pb FIND_FORMAT=carbonapi_v3_pb DELAY=1 DURATION=1h USERS_FIND=2 USERS_TAGS=2 USERS_1H_0=2"}
 
-	samples1_1_d = app.Sample{
+	samples1_1_d = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts,
 		Ts:     test1.Ts.Add(time.Millisecond),
@@ -109,7 +112,7 @@ func init() {
 		},
 		Value: 0.8,
 	}
-	samples1_1_r = app.Sample{
+	samples1_1_r = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts,
 		Ts:     test1.Ts.Add(time.Millisecond),
@@ -127,7 +130,7 @@ func init() {
 		Value: 1,
 	}
 
-	samples1_2_d = app.Sample{
+	samples1_2_d = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts.Add(10 * time.Second),
 		Ts:     test1.Ts.Add(10 * time.Second),
@@ -144,7 +147,7 @@ func init() {
 		},
 		Value: 0.4,
 	}
-	samples1_2_r = app.Sample{
+	samples1_2_r = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts.Add(10 * time.Second),
 		Ts:     test1.Ts.Add(10 * time.Second),
@@ -162,7 +165,7 @@ func init() {
 		Value: 1,
 	}
 
-	samples1_3_d = app.Sample{
+	samples1_3_d = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts,
 		Ts:     test1.Ts.Add(20 * time.Millisecond),
@@ -179,7 +182,7 @@ func init() {
 		},
 		Value: 0.2,
 	}
-	samples1_3_r = app.Sample{
+	samples1_3_r = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts,
 		Ts:     test1.Ts.Add(20 * time.Millisecond),
@@ -197,7 +200,7 @@ func init() {
 		Value: 1,
 	}
 
-	samples1_4_d = app.Sample{
+	samples1_4_d = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts,
 		Ts:     test1.Ts.Add(30 * time.Millisecond),
@@ -214,7 +217,7 @@ func init() {
 		},
 		Value: 0.2,
 	}
-	samples1_4_r = app.Sample{
+	samples1_4_r = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts,
 		Ts:     test1.Ts.Add(30 * time.Millisecond),
@@ -232,7 +235,7 @@ func init() {
 		Value: 1,
 	}
 
-	samples2_1_d = app.Sample{
+	samples2_1_d = dbs.Sample{
 		Id:     test2.Id,
 		Start:  test2.Ts,
 		Ts:     test2.Ts.Add(time.Millisecond),
@@ -249,7 +252,7 @@ func init() {
 		},
 		Value: 0.8,
 	}
-	samples2_1_r = app.Sample{
+	samples2_1_r = dbs.Sample{
 		Id:     test2.Id,
 		Start:  test2.Ts,
 		Ts:     test2.Ts.Add(time.Millisecond),
@@ -267,7 +270,7 @@ func init() {
 		Value: 1,
 	}
 
-	samples3_1_d = app.Sample{
+	samples3_1_d = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts,
 		Ts:     test1.Ts.Add(time.Millisecond),
@@ -284,7 +287,7 @@ func init() {
 		},
 		Value: 0.4,
 	}
-	samples3_1_r = app.Sample{
+	samples3_1_r = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts,
 		Ts:     test1.Ts.Add(time.Millisecond),
@@ -301,7 +304,7 @@ func init() {
 		},
 		Value: 1,
 	}
-	samples3_2_d = app.Sample{
+	samples3_2_d = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts,
 		Ts:     test1.Ts.Add(time.Second),
@@ -318,7 +321,7 @@ func init() {
 		},
 		Value: 0.2,
 	}
-	samples3_2_r = app.Sample{
+	samples3_2_r = dbs.Sample{
 		Id:     test1.Id,
 		Start:  test1.Ts,
 		Ts:     test1.Ts.Add(time.Second),
@@ -340,9 +343,9 @@ func init() {
 }
 
 func dbInit() {
-	chAddress := app.Getenv("K6_STAT_DB_ADDR", "http://localhost:8123")
-	chDB := app.Getenv("K6_STAT_DB", "default")
-	chPparam := app.Getenv("K6_STAT_DB_PARAM", "dial_timeout=200ms&max_execution_time=60")
+	chAddress := env.GetEnv("K6_STAT_DB_ADDR", "http://localhost:8123")
+	chDB := env.GetEnv("K6_STAT_DB", "default")
+	chPparam := env.GetEnv("K6_STAT_DB_PARAM", "dial_timeout=200ms&max_execution_time=60")
 	dbDSN = chAddress + "/" + chDB + "?" + chPparam
 
 	db, err := sql.Open("clickhouse", dbDSN)
@@ -393,7 +396,7 @@ func dbInit() {
 	if err != nil {
 		panic(err)
 	}
-	tests := []app.Test{test1, test2, test3}
+	tests := []dbs.Test{test1, test2, test3}
 	for _, test := range tests {
 		if _, err = stmt.Exec(test.Id, test.Ts, test.Name, test.Params); err != nil {
 			tx.Rollback()
@@ -414,7 +417,7 @@ func dbInit() {
 	if err != nil {
 		panic(err)
 	}
-	samples := []app.Sample{
+	samples := []dbs.Sample{
 		samples1_1_d, samples1_1_r, samples1_2_d, samples1_2_r, samples1_3_d, samples1_3_r, samples1_4_d, samples1_4_r,
 		samples2_1_d, samples2_1_r,
 		samples3_1_d, samples3_1_r, samples3_2_d, samples3_2_r,
@@ -455,27 +458,27 @@ func TestIntegrationAppTests(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		filter      app.TestFilter
+		filter      dbs.TestFilter
 		contentType string
 		wantStatus  int
-		want        []app.Test
+		want        []dbs.Test
 	}{
 		{
 			name:       "all",
 			wantStatus: http.StatusOK,
-			want:       []app.Test{test1, test2, test3},
+			want:       []dbs.Test{test1, test2, test3},
 		},
 		{
 			name:       t1.Format("2006-01-02T15:04:05Z") + " " + t3.Format("2006-01-02T15:04:05Z"),
-			filter:     app.TestFilter{From: t1.Unix(), Until: t3.Unix()},
+			filter:     dbs.TestFilter{From: t1.Unix(), Until: t3.Unix()},
 			wantStatus: http.StatusOK,
-			want:       []app.Test{test1, test2},
+			want:       []dbs.Test{test1, test2},
 		},
 		{
 			name:       "graphite-clickhouse 2006-01-03",
-			filter:     app.TestFilter{From: t1.Unix(), Until: t3.Unix(), NamePrefix: "graphite-clickhouse 2006-01-03"},
+			filter:     dbs.TestFilter{From: t1.Unix(), Until: t3.Unix(), NamePrefix: "graphite-clickhouse 2006-01-03"},
 			wantStatus: http.StatusOK,
-			want:       []app.Test{test2},
+			want:       []dbs.Test{test2},
 		},
 	}
 	for i, tt := range tests {
@@ -504,7 +507,7 @@ func TestIntegrationAppTests(t *testing.T) {
 				t.Fatalf("/api/tests = %d (%s)", resp.StatusCode, string(body))
 			}
 			if resp.StatusCode == http.StatusOK {
-				var tests []app.Test
+				var tests []dbs.Test
 				err = json.Unmarshal(body, &tests)
 				if err != nil {
 					t.Fatalf("/api/tests decode = %v", err)
@@ -535,16 +538,16 @@ func TestIntegrationAppSamplesDuration(t *testing.T) {
 
 	tests := []struct {
 		name        string
-		filter      app.SampleFilter
+		filter      dbs.SampleFilter
 		contentType string
 		wantStatus  int
-		want        []app.SampleStatus
+		want        []dbs.SampleStatus
 	}{
 		{
 			name:       "test1 + test3",
-			filter:     app.SampleFilter{Id: test1.Id, Start: test1.Ts.UnixNano()},
+			filter:     dbs.SampleFilter{Id: test1.Id, Start: test1.Ts.UnixNano()},
 			wantStatus: http.StatusOK,
-			want: []app.SampleStatus{
+			want: []dbs.SampleStatus{
 				{
 					Id: test1.Id, Start: test1.Ts, Label: "render_1h_offset_0", Url: "render format=carbonapi_v3_pb target=a.*",
 					Status: "400", Count: 3.0,
@@ -557,9 +560,9 @@ func TestIntegrationAppSamplesDuration(t *testing.T) {
 		},
 		{
 			name:       "test2",
-			filter:     app.SampleFilter{Id: test2.Id, Start: test2.Ts.UnixNano()},
+			filter:     dbs.SampleFilter{Id: test2.Id, Start: test2.Ts.UnixNano()},
 			wantStatus: http.StatusOK,
-			want: []app.SampleStatus{
+			want: []dbs.SampleStatus{
 				{
 					Id: test2.Id, Start: test2.Ts, Label: "render_1h_offset_0", Url: "render format=carbonapi_v3_pb target=a.*",
 					Status: "200", Count: 1.0,
@@ -590,7 +593,7 @@ func TestIntegrationAppSamplesDuration(t *testing.T) {
 				t.Fatalf("/api/test/http/duration = %d (%s)", resp.StatusCode, string(body))
 			}
 			if resp.StatusCode == http.StatusOK {
-				var samples []app.SampleStatus
+				var samples []dbs.SampleStatus
 				err = json.Unmarshal(body, &samples)
 				if err != nil {
 					t.Fatalf("/api/test/http/duration decode = %v", err)
