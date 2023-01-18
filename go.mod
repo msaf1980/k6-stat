@@ -7,8 +7,10 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/goccy/go-json v0.10.0
 	github.com/gofiber/fiber/v2 v2.40.1
+	github.com/google/go-cmp v0.5.9
+	github.com/json-iterator/go v1.1.12
 	github.com/msaf1980/fiberlog v0.0.1
-	github.com/msaf1980/go-clipper v0.0.10
+	github.com/msaf1980/go-clipper v0.0.19
 	github.com/msaf1980/go-stringutils v0.1.4
 	github.com/msaf1980/go-timeutils v0.0.2
 	github.com/peterh/liner v1.2.2
@@ -27,6 +29,8 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421 // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/paulmach/orb v0.8.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

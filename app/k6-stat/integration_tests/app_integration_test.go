@@ -19,8 +19,8 @@ import (
 	"time"
 
 	_ "github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/google/go-cmp/cmp"
 	"github.com/rs/zerolog"
-	"github.com/stretchr/testify/assert"
 
 	app "github.com/msaf1980/k6-stat/app/k6-stat"
 	"github.com/msaf1980/k6-stat/dbs"
@@ -476,7 +476,7 @@ func TestIntegrationAppTests(t *testing.T) {
 		},
 		{
 			name:       "graphite-clickhouse 2006-01-03",
-			filter:     dbs.TestFilter{From: t1.Unix(), Until: t3.Unix(), NamePrefix: "graphite-clickhouse 2006-01-03"},
+			filter:     dbs.TestFilter{From: t1.Unix(), Until: t3.Unix(), Name: "graphite-clickhouse 2006-01-03%"},
 			wantStatus: http.StatusOK,
 			want:       []dbs.Test{test2},
 		},
@@ -484,7 +484,7 @@ func TestIntegrationAppTests(t *testing.T) {
 	for i, tt := range tests {
 		t.Run(fmt.Sprintf("[%d] %s", i, tt.name), func(t *testing.T) {
 			var r io.Reader
-			if tt.filter.From != 0 || tt.filter.Until != 0 || tt.filter.NamePrefix != "" {
+			if tt.filter.From != 0 || tt.filter.Until != 0 || tt.filter.Name != "" {
 				b, err := json.Marshal(tt.filter)
 				if err != nil {
 					t.Fatal(err)
@@ -512,13 +512,15 @@ func TestIntegrationAppTests(t *testing.T) {
 				if err != nil {
 					t.Fatalf("/api/tests decode = %v", err)
 				}
-				assert.Equal(t, tt.want, tests)
+				if !reflect.DeepEqual(tt.want, tests) {
+					t.Fatalf("/api/tests = %s", cmp.Diff(tt.want, tests))
+				}
 			}
 		})
 	}
 }
 
-func TestIntegrationAppSamplesDuration(t *testing.T) {
+func TestIntegrationAppSamplesStatus(t *testing.T) {
 	logger := zerolog.New(os.Stdout)
 	statApp, err := app.New(dbDSN, 2, &logger, "t_k6_tests", "t_k6_samples")
 	if err != nil {
@@ -586,17 +588,17 @@ func TestIntegrationAppSamplesDuration(t *testing.T) {
 
 			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
-				t.Fatalf("/api/test/http/duration error = %v", err)
+				t.Fatalf("/api/test/http/status error = %v", err)
 			}
 			body, _ := io.ReadAll(resp.Body)
 			if resp.StatusCode != tt.wantStatus {
-				t.Fatalf("/api/test/http/duration = %d (%s)", resp.StatusCode, string(body))
+				t.Fatalf("/api/test/http/status = %d (%s)", resp.StatusCode, string(body))
 			}
 			if resp.StatusCode == http.StatusOK {
 				var samples []dbs.SampleStatus
 				err = json.Unmarshal(body, &samples)
 				if err != nil {
-					t.Fatalf("/api/test/http/duration decode = %v", err)
+					t.Fatalf("/api/test/http/status decode = %v", err)
 				}
 				if diff := diffSamplesStatus(tt.want, samples); diff != "" {
 					t.Errorf("samples status:\n%s", diff)

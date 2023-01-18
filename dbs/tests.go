@@ -1,9 +1,12 @@
 package dbs
 
 import (
+	"errors"
 	"time"
 
+	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/msaf1980/go-stringutils"
+	"github.com/msaf1980/go-timeutils"
 )
 
 type Test struct {
@@ -14,9 +17,14 @@ type Test struct {
 }
 
 type TestFilter struct {
-	From       int64  `json:"from,omitempty"`  // epoch seconds
-	Until      int64  `json:"until,omitempty"` // epoch seconds
-	NamePrefix string `json:"name_prefix,omitempty"`
+	From  int64  `json:"from"`  // epoch seconds
+	Until int64  `json:"until"` // epoch seconds
+	Name  string `json:"name_prefix,omitempty"`
+}
+
+type TestIdFilter struct {
+	Id   uint64 `json:"id"`   // epoch seconds
+	Time int64  `json:"time"` // epoch nanoseconds
 }
 
 func (d *DB) GetTests(f TestFilter) ([]Test, *QueryError) {
@@ -54,13 +62,13 @@ func (d *DB) GetTests(f TestFilter) ([]Test, *QueryError) {
 		// return c.Status(http.StatusBadRequest).SendString(invalidUntil)
 		return nil, InvalidUntil
 	}
-	if f.NamePrefix != "" {
+	if f.Name != "" {
 		if filtered {
 			_, _ = query.WriteString(" AND name LIKE ?")
 		} else {
 			_, _ = query.WriteString(" WHERE name LIKE ?")
 		}
-		filter = append(filter, f.NamePrefix+"%")
+		filter = append(filter, f.Name)
 	}
 
 	_, _ = query.WriteString(" ORDER BY id, ts, name")
@@ -91,4 +99,46 @@ func (d *DB) GetTests(f TestFilter) ([]Test, *QueryError) {
 	}
 
 	return tests, nil
+}
+
+func (d *DB) GetTestById(f TestIdFilter) (Test, *QueryError) {
+	var query stringutils.Builder
+
+	ts := timeutils.UnixNano(f.Time).UTC()
+
+	query.Grow(64)
+	_, _ = query.WriteString("SELECT id, ts, name, params FROM ")
+	_, _ = query.WriteString(d.tableTests)
+
+	_, _ = query.WriteString(" WHERE ts = @Time")
+	_, _ = query.WriteString(" AND id = @Id")
+
+	_, _ = query.WriteString(" ORDER BY id, ts, name")
+
+	rows, err := d.db.Query(query.String(), clickhouse.Named("Id", f.Id), clickhouse.DateNamed("Time", ts, 3))
+	if err != nil {
+		// app.logger.Error().Uint64("id", c.Context().ID()).Str("sql", query.String()).Err(err).Msg("get tests")
+		return Test{}, NewQueryError(err, 0, query.String())
+	}
+	defer rows.Close()
+	tests := make([]Test, 0, 1)
+	for rows.Next() {
+		var test Test
+		err = rows.Scan(&test.Id, &test.Ts, &test.Name, &test.Params)
+		if err != nil {
+			// handle this error
+			return Test{}, NewQueryError(err, 0, query.String())
+		}
+		if len(tests) > 1 {
+			return tests[0], NewQueryError(errors.New("duplicate test id"), 0, query.String())
+		}
+		tests = append(tests, test)
+	}
+	// get any error encountered during iteration
+	err = rows.Err()
+	if err != nil {
+		return tests[0], NewQueryError(err, 0, query.String())
+	}
+
+	return tests[0], nil
 }

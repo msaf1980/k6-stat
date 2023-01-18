@@ -25,10 +25,11 @@ help:
 
 ## clean: Removes any previously created build artifacts.
 clean:
-	rm -f ./k6-stat
+	rm -f ./k6-stat ./k6-stat-cli
 
 build: FORCE
 	GO111MODULE=on ${GO} build -ldflags '-X main.BuildVersion=$(VERSION)' ${PWD}/cmd/k6-stat
+	GO111MODULE=on ${GO} build -ldflags '-X main.BuildVersion=$(VERSION)' ${PWD}/cmd/k6-stat-cli
 
 ## format: Applies Go formatting to code.
 format:
