@@ -1,7 +1,7 @@
 //go:build !test_integration
 // +build !test_integration
 
-package app
+package k6_stat
 
 import (
 	"io"

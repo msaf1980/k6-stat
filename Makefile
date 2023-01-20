@@ -3,6 +3,8 @@ all: test build
 VERSION ?= $(shell git describe --abbrev=4 --dirty --always --tags)
 
 CLICKHOUSE_VERSION ?= "clickhouse/clickhouse-server:latest"
+CLICKHOUSE_CONTAINER ?= "xk6_output_clickhouse"
+
 # K6_STAT_DB_ADDR ?= "http://localhost:8123"
 # K6_STAT_DB ?= "default"
 
@@ -23,10 +25,11 @@ help:
 
 ## clean: Removes any previously created build artifacts.
 clean:
-	rm -f ./k6-stat
+	rm -f ./k6-stat ./k6-stat-cli
 
 build: FORCE
-	GO111MODULE=on ${GO} build -ldflags '-X main.BuildVersion=$(VERSION)' ${PWD}
+	GO111MODULE=on ${GO} build -ldflags '-X main.BuildVersion=$(VERSION)' ${PWD}/cmd/k6-stat
+	GO111MODULE=on ${GO} build -ldflags '-X main.BuildVersion=$(VERSION)' ${PWD}/cmd/k6-stat-cli
 
 ## format: Applies Go formatting to code.
 format:
@@ -37,15 +40,15 @@ test:
 	${GO} test -cover -race ./...
 
 up:
-	${DOCKER} run -d --rm --name clickhouse_k6_stat -p 127.0.0.1:8123:8123 ${CLICKHOUSE_VERSION}
+	${DOCKER} run -d --rm --name "${CLICKHOUSE_CONTAINER}" -p 127.0.0.1:8123:8123 ${CLICKHOUSE_VERSION}
 down:
-	${DOCKER} stop clickhouse_k6_stat
+	${DOCKER} stop "${CLICKHOUSE_CONTAINER}"
 
 cli:
-	${DOCKER} exec -it clickhouse_k6_stat clickhouse-client
+	${DOCKER} exec -it "${CLICKHOUSE_CONTAINER}" clickhouse-client
 
 logs:
-	${DOCKER} exec -it clickhouse_k6_stat tail -40 /var/log/clickhouse-server/clickhouse-server.log
+	${DOCKER} exec -it "${CLICKHOUSE_CONTAINER}" tail -40 /var/log/clickhouse-server/clickhouse-server.log
 
 integrations:
 	${GO} test -count=1 -tags=test_integration ./...

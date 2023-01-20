@@ -1,7 +1,7 @@
 //go:build !test_integration
 // +build !test_integration
 
-package app
+package k6_stat
 
 import (
 	"encoding/json"
@@ -18,34 +18,36 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/msaf1980/k6-stat/dbs"
 )
 
 var (
 	t1, t2, t3                 time.Time
-	test1, test2, test3        Test
+	test1, test2, test3        dbs.Test
 	allRows, timeRows, gchRows *sqlmock.Rows
 )
 
 func init() {
 	t1, _ = time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
-	test1 = Test{Id: t1, Name: "graphite-clickhouse 1", Params: "1"}
+	test1 = dbs.Test{Id: uint64(t1.UnixNano()), Ts: t1, Name: "graphite-clickhouse 1", Params: "1"}
 	t2, _ = time.Parse(time.RFC3339, "2006-01-02T18:04:05Z")
-	test2 = Test{Id: t2, Name: "carbonapi 1", Params: "1"}
+	test2 = dbs.Test{Id: uint64(t2.UnixNano()), Ts: t2, Name: "carbonapi 1", Params: "1"}
 	t3, _ = time.Parse(time.RFC3339, "2006-01-03T15:04:05Z")
-	test3 = Test{Id: t3, Name: "graphite-clickhouse 2", Params: "2"}
+	test3 = dbs.Test{Id: uint64(t3.UnixNano()), Ts: t3, Name: "graphite-clickhouse 2", Params: "2"}
 
-	allRows = sqlmock.NewRows([]string{"id", "name", "params"}).
-		AddRow(test1.Id, test1.Name, test1.Params).
-		AddRow(test2.Id, test2.Name, test2.Params).
-		AddRow(test3.Id, test3.Name, test3.Params)
+	allRows = sqlmock.NewRows([]string{"id", "ts", "name", "params"}).
+		AddRow(test1.Id, test1.Ts, test1.Name, test1.Params).
+		AddRow(test2.Id, test2.Ts, test2.Name, test2.Params).
+		AddRow(test3.Id, test3.Ts, test3.Name, test3.Params)
 
-	timeRows = sqlmock.NewRows([]string{"id", "name", "params"}).
-		AddRow(test1.Id, test1.Name, test1.Params).
-		AddRow(test2.Id, test2.Name, test2.Params)
+	timeRows = sqlmock.NewRows([]string{"id", "ts", "name", "params"}).
+		AddRow(test1.Id, test1.Ts, test1.Name, test1.Params).
+		AddRow(test2.Id, test2.Ts, test2.Name, test2.Params)
 
-	gchRows = sqlmock.NewRows([]string{"id", "name", "params"}).
-		AddRow(test1.Id, test1.Name, test1.Params).
-		AddRow(test3.Id, test3.Name, test3.Params)
+	gchRows = sqlmock.NewRows([]string{"id", "ts", "name", "params"}).
+		AddRow(test1.Id, test1.Ts, test1.Name, test1.Params).
+		AddRow(test3.Id, test3.Ts, test3.Name, test3.Params)
 }
 
 func newMockApp(sqlRegex string, rows *sqlmock.Rows, logger *zerolog.Logger) (*App, error) {
@@ -56,7 +58,7 @@ func newMockApp(sqlRegex string, rows *sqlmock.Rows, logger *zerolog.Logger) (*A
 
 	mock.ExpectQuery(sqlRegex).WillReturnRows(rows)
 
-	return newApp(db, logger, "t_k6_tests", "t_k6_samples")
+	return NewWithDB(db, logger, "t_k6_tests", "t_k6_samples")
 }
 
 func TestUnitAppTests(t *testing.T) {
@@ -67,29 +69,29 @@ func TestUnitAppTests(t *testing.T) {
 		contentType string
 		params      string
 		wantStatus  int
-		want        []Test
+		want        []dbs.Test
 	}{
 		{
-			sqlRegex:   `^SELECT id, name, params FROM t_k6_tests ORDER BY id, name$`,
+			sqlRegex:   `^SELECT id, ts, name, params FROM t_k6_tests ORDER BY id, ts, name$`,
 			rows:       allRows,
 			wantStatus: http.StatusOK,
-			want:       []Test{test1, test2, test3},
+			want:       []dbs.Test{test1, test2, test3},
 		},
 		{
-			sqlRegex:    `^SELECT id, name, params FROM t_k6_tests WHERE id >= \? AND id < \? ORDER BY id, name$`,
+			sqlRegex:    `^SELECT id, ts, name, params FROM t_k6_tests WHERE ts >= \? AND ts < \? ORDER BY id, ts, name$`,
 			rows:        timeRows,
 			contentType: "application/json",
 			params:      `{ "from": 1, "until": 2}`,
 			wantStatus:  http.StatusOK,
-			want:        []Test{test1, test2},
+			want:        []dbs.Test{test1, test2},
 		},
 		{
-			sqlRegex:    `^SELECT id, name, params FROM t_k6_tests WHERE id >= \? AND id < \? AND name LIKE \? ORDER BY id, name$`,
+			sqlRegex:    `^SELECT id, ts, name, params FROM t_k6_tests WHERE ts >= \? AND ts < \? AND name LIKE \? ORDER BY id, ts, name$`,
 			rows:        gchRows,
 			contentType: "application/json",
 			params:      `{ "from": 1, "until": 2, "name_prefix": "graphite-clickhouse"}`,
 			wantStatus:  http.StatusOK,
-			want:        []Test{test1, test3},
+			want:        []dbs.Test{test1, test3},
 		},
 	}
 	for i, tt := range tests {
@@ -128,10 +130,10 @@ func TestUnitAppTests(t *testing.T) {
 			}
 			body, _ := io.ReadAll(resp.Body)
 			if resp.StatusCode != tt.wantStatus {
-				t.Fatalf("/api/tests = %d (%s)", resp.StatusCode, string(body))
+				t.Fatalf("/api/tests = %d (%s), want %d", resp.StatusCode, string(body), tt.wantStatus)
 			}
 			if resp.StatusCode == http.StatusOK {
-				var tests []Test
+				var tests []dbs.Test
 				err = json.Unmarshal(body, &tests)
 				if err != nil {
 					t.Fatalf("/api/tests decode = %v", err)
