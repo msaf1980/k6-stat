@@ -3,7 +3,7 @@ module github.com/msaf1980/k6-stat
 go 1.19
 
 require (
-	github.com/ClickHouse/clickhouse-go/v2 v2.5.0
+	github.com/ClickHouse/clickhouse-go/v2 v2.5.1
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/goccy/go-json v0.10.0
 	github.com/gofiber/fiber/v2 v2.40.1
