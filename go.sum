@@ -51,8 +51,8 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/msaf1980/fiberlog v0.0.1 h1:0iD1hP9r7U5SRDEfVftbEbFLdwMPzZSPaiwFFQsaqo0=
 github.com/msaf1980/fiberlog v0.0.1/go.mod h1:pu+h7mZjKFdI+fecCmzE4BPlnvK/m+Oz4en+1Yya4yc=
-github.com/msaf1980/go-clipper v0.0.19 h1:IZCuvp+kfS+ovUk7qxizbtqqGgE673RmBGO/QMc0bkU=
-github.com/msaf1980/go-clipper v0.0.19/go.mod h1:GbsbnO1b7xrsmQ3tdeM6tqPQbqqU5rHhv7iFqCBblRQ=
+github.com/msaf1980/go-clipper v0.0.23 h1:hVHjHu6ngUJHp1DO42Fdj47XbWNlUTgEXBVgX01DGQQ=
+github.com/msaf1980/go-clipper v0.0.23/go.mod h1:GbsbnO1b7xrsmQ3tdeM6tqPQbqqU5rHhv7iFqCBblRQ=
 github.com/msaf1980/go-stringutils v0.1.4 h1:UwsIT0hplHVucqbknk3CoNqKkmIuSHhsbBldXxyld5U=
 github.com/msaf1980/go-stringutils v0.1.4/go.mod h1:AxmV/6JuQUAtZJg5XmYATB5ZwCWgtpruVHY03dswRf8=
 github.com/msaf1980/go-timeutils v0.0.2 h1:SkkwJ20phvsg86shXtFdJ6ax6fWK2lFvxOTBhviqksM=
