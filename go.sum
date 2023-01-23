@@ -55,8 +55,8 @@ github.com/msaf1980/go-clipper v0.0.19 h1:IZCuvp+kfS+ovUk7qxizbtqqGgE673RmBGO/QM
 github.com/msaf1980/go-clipper v0.0.19/go.mod h1:GbsbnO1b7xrsmQ3tdeM6tqPQbqqU5rHhv7iFqCBblRQ=
 github.com/msaf1980/go-stringutils v0.1.4 h1:UwsIT0hplHVucqbknk3CoNqKkmIuSHhsbBldXxyld5U=
 github.com/msaf1980/go-stringutils v0.1.4/go.mod h1:AxmV/6JuQUAtZJg5XmYATB5ZwCWgtpruVHY03dswRf8=
-github.com/msaf1980/go-timeutils v0.0.2 h1:SkkwJ20phvsg86shXtFdJ6ax6fWK2lFvxOTBhviqksM=
-github.com/msaf1980/go-timeutils v0.0.2/go.mod h1:r252j2O/ZLuwNMp/rlSYhbQdxg6glZ3MzgvskE/ItGY=
+github.com/msaf1980/go-timeutils v0.0.4 h1:qdWcThz2gMTb73d3uDjwfXNsIzhpIjMlBQCnqc4pa6M=
+github.com/msaf1980/go-timeutils v0.0.4/go.mod h1:r252j2O/ZLuwNMp/rlSYhbQdxg6glZ3MzgvskE/ItGY=
 github.com/paulmach/orb v0.8.0 h1:W5XAt5yNPNnhaMNEf0xNSkBMJ1LzOzdk2MRlB6EN0Vs=
 github.com/paulmach/orb v0.8.0/go.mod h1:FWRlTgl88VI1RBx/MkrwWDRhQ96ctqMCh8boXhmqB/A=
 github.com/paulmach/protoscan v0.2.1/go.mod h1:SpcSwydNLrxUGSDvXvO0P7g7AuhJ7lcKfDlhJCDw2gY=
