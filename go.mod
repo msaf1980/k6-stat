@@ -10,9 +10,9 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/json-iterator/go v1.1.12
 	github.com/msaf1980/fiberlog v0.0.1
-	github.com/msaf1980/go-clipper v0.0.19
+	github.com/msaf1980/go-clipper v0.0.23
 	github.com/msaf1980/go-stringutils v0.1.4
-	github.com/msaf1980/go-timeutils v0.0.2
+	github.com/msaf1980/go-timeutils v0.0.4
 	github.com/peterh/liner v1.2.2
 	github.com/rs/zerolog v1.28.0
 	github.com/stretchr/testify v1.8.1
