@@ -14,7 +14,7 @@ require (
 	github.com/msaf1980/go-stringutils v0.1.4
 	github.com/msaf1980/go-timeutils v0.0.4
 	github.com/peterh/liner v1.2.2
-	github.com/rs/zerolog v1.28.0
+	github.com/rs/zerolog v1.29.0
 	github.com/stretchr/testify v1.8.1
 )
 
